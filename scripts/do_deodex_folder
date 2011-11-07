@@ -1,0 +1,275 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+#
+# This script has two parameters:
+#
+# $1 = folder(s) to deodex under /system (mandatory)
+#       e.g. framework
+#       e.g. "framework app" 
+# $2 = whether to enable logging (y or n) (optional) 
+#
+
+dir_list=$1
+do_log=$2
+
+if [ "$dir_list" == "" ]
+then
+  echo "No folders for deodexing specified!"
+  exit 0
+fi
+
+base_dir=`pwd`
+
+cd WORKING_*
+
+num_odex_fr=`find system/framework | grep -c "\.odex$"`
+num_odex_app=`find system/app | grep -c "\.odex$"`
+
+
+#
+# Create log file
+#
+
+if [ "$do_log" == "" ]
+then
+  echo
+  echo -n "Enable logging to file (y/n)? (default: y): "
+  read do_log
+fi
+
+if [ "$do_log" != "n" ]
+then
+  do_log=y
+else
+  do_log=n
+fi
+
+date_str=`date '+%m%d%y_%H%M%S'`
+log_file=deodex_$date_str.log
+
+
+#
+# Go through each folder specified
+#
+
+for folder in ${dir_list[@]}
+do
+
+  if [ "$do_log" == "y" ]
+  then
+    echo
+    echo "Creating log file $log_file ..."
+
+    echo "" >> ../$log_file
+    echo "Folder: $folder" >> ../$log_file
+    echo "-------------------" >> ../$log_file
+  fi
+
+  if [ $folder == framework ]
+  then
+    num_odex_folder=$num_odex_fr
+  elif [ $folder == app ]
+  then
+    num_odex_folder=$num_odex_app
+  else
+    echo
+    echo "Error: Folder $folder not valid!"
+
+    if [ "$do_log" == "y" ]
+    then
+      echo "Invalid folder" >> ../$log_file
+    fi
+
+    continue
+  fi
+
+  count=0
+  found_error=0
+  path=system/$folder
+
+  echo
+  echo
+  echo "Going into $path ..."
+  echo
+
+  cd $path
+
+  grep_cmd=`find . | grep "\.odex$" | sed 's/.\///g' | sort -f`
+
+  if [ "$grep_cmd" == "" ]
+  then
+    echo "Nothing found under $path!"
+
+    if [ "$do_log" == "y" ]
+    then
+      echo "Nothing here" >> ../../../$log_file
+    fi
+
+  else
+
+    #
+    # Finally, deodex each file
+    #
+    new_version=`more ../../../tools/deodex_files/use_this_version.txt | sed 's/[ ]*$//g'`
+    echo "--> Trying this version of baksmali/smali: $new_version"    
+    echo
+    version=newer
+    cp -f ../../../tools/deodex_files/baksmali-$new_version.jar baksmali.jar
+    cp -f ../../../tools/deodex_files/smali-$new_version.jar smali.jar
+
+    version_num=$new_version
+
+    for odex_file in $grep_cmd
+    do
+
+      count=$(($count+1))
+      echo
+      echo "NOW AT FILE $count OF $num_odex_folder IN $path: $odex_file"
+      try=1
+
+      while [ -e $odex_file ]
+      do
+
+        ../../../scripts/do_deodex_file $odex_file ../framework
+        
+        #
+        # Use brute-force method if it failed
+        #
+
+        if [ -e $odex_file ]
+        then
+         
+          if [ "$do_log" == "y" ]
+          then
+            echo "* Warning: $odex_file (using smali/baksmali $version_num)" >> ../../../$log_file
+          fi
+
+          current_dir=`pwd`
+          cd ../framework
+
+          # Get a list of all the framework JARs
+          fr_jar_list=`find . | grep "\.jar$" | sed 's/.\///g' | sort -f`
+          fr_jar_list=`echo $fr_jar_list | \
+                      sed \
+                        -e 's/baksmali.jar//' \
+                        -e 's/smali.jar//' \
+                        -e 's/ /:/g' \
+                        -e 's/::/:/g' `
+        
+          cd $current_dir
+
+          echo "-> Using brute-force method (ignore above error if successful):"
+          echo
+
+          ../../../scripts/do_deodex_file $odex_file ../framework $fr_jar_list
+           
+          if [ -e $odex_file ] && [ $try == 2 ]
+          then
+
+            if [ "$do_log" == "y" ]
+            then
+              echo "* Warning: $odex_file (using brute-force with $version_num)" >> ../../../$log_file
+            fi
+
+            if [ $version==older ]
+            then
+              echo
+              echo "--> Reverting to newer baksmali/smali ($new_version)"
+              echo
+              version=newer
+              version_num=$new_version
+              cp -f ../../../tools/deodex_files/baksmali-$new_version.jar baksmali.jar
+              cp -f ../../../tools/deodex_files/smali-$new_version.jar smali.jar              
+            fi  
+
+            #echo "Trying $odex_file but ignoring error ..."
+            #../../../scripts/do_deodex_file $odex_file ../framework $fr_jar_list yes
+
+            echo "ERROR: Aborting $odex_file"
+            found_error=1
+            
+            if [ "$do_log" == "y" ]
+            then
+              echo "* ERROR: Aborting $odex_file!" >> ../../../$log_file
+            fi
+
+            break
+
+          elif [ ! -e $odex_file ]
+          then
+            if [ "$do_log" == "y" ]
+            then
+              echo "$odex_file successfully deodexed" >> ../../../$log_file
+            fi
+
+            break
+          fi
+
+          if [ $version==newer ]
+          then
+            old_version=`more ../../../tools/deodex_files/old_version/use_this_version.txt | sed 's/[ ]*$//g'`
+            echo
+            echo "--> Trying older version of baksmali/smali ($old_version)"
+            echo
+            version=older
+            version_num=$old_version
+            cp -f ../../../tools/deodex_files/old_version/baksmali-$old_version.jar baksmali.jar
+            cp -f ../../../tools/deodex_files/old_version/smali-$old_version.jar smali.jar
+          else 
+            echo
+            echo "--> Trying newer version of baksmali/smali ($new_version)"
+            echo
+            version=newer
+            version_num=$new_version
+            cp -f ../../../tools/deodex_files/baksmali-$new_version.jar baksmali.jar
+            cp -f ../../../tools/deodex_files/smali-$new_version.jar smali.jar
+          fi
+
+          try=2
+
+        else
+          if [ "$do_log" == "y" ]
+          then
+            echo "$odex_file successfully deodexed" >> ../../../$log_file
+          fi
+        fi
+      done
+
+    done
+
+    rm -f baksmali.jar
+    rm -f smali.jar
+
+    echo
+    echo "Finished $path"
+
+    if [ "$found_error" == "1" ]
+    then
+      echo "Could not deodex the following (you can try to deodex these files again):"
+      echo `ls *.odex`
+      echo
+      cd ../..
+      break
+    fi
+
+  fi
+
+  cd ../..
+
+done
+
+if [ "$do_log" == "y" ]
+then
+  echo
+  echo "A summary of the deodexing has been logged in $log_file"
+fi
+
+cd $base_dir

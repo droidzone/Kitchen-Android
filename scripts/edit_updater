@@ -1,0 +1,5 @@
+#!/bin/bash
+export orig_dir=`pwd`
+cd ~/kitchen/WORK*/META-INF/com/google/android
+gedit updater-script
+cd $orig_dir

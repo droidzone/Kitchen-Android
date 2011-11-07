@@ -1,0 +1,20 @@
+
+if [ -d OUTPUT_ZIP ]
+then
+  echo Found output folder
+  echo Found the following unsigned files
+  echo " "
+  ls -l ./OUTPUT_ZIP/*unsigned*
+else
+  echo No working folder found!
+  exit 0
+fi
+echo " "
+echo "Really delete these files? (y/n)"
+read choice_a
+if [ "$choice_a" == "n" ]
+then
+  exit 1
+fi 
+echo "Removing..."
+rm ./OUTPUT_ZIP/*unsigned*

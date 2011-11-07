@@ -1,0 +1,5 @@
+#!/bin/bash
+export orig_dir=`pwd`
+cd ~/kitchen/WORK*/system
+gedit build.prop
+cd $orig_dir

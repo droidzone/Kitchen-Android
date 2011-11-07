@@ -1,0 +1,32 @@
+#!/bin/bash
+echo "Current working directory $(pwd)"
+maindir=$(pwd)
+#echo Command line arguments: $@
+#echo '$1' is $1
+if [ $1 = "main" ]
+then
+  echo "Editing Main Menu"
+  filed="$maindir/menu"
+elif [ $1 = "advanced" ]
+then
+  echo "Editing Advanced Menu"
+  filed="$maindir/scripts/menu_advanced"
+fi
+
+#echo "filed is $filed"
+if [ -e /usr/bin/kate ] 
+then
+  echo "Opening Kate text editor"  
+  kate $filed
+elif [ -e /usr/bin/gedit ] 
+then
+  echo "Opening Gedit text editor"    
+  gedit $filed
+else
+  echo "Did not find a suitable compatible editor. Aborting"
+fi
+read something_1
+exit 0
+
+  
+  

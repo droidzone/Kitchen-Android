@@ -1,0 +1,63 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+
+clear
+if [ ! -d WORKING_* ]
+then
+  echo No working folder found!
+  scripts/press_enter
+  exit 0
+fi
+
+
+while :
+do
+
+  clear
+
+  echo
+  echo "Convert update-script/updater-script"
+  echo "--------------------------------------"
+  echo
+  echo "You should know:"
+  echo "- An update-script is in 'Amend' format"
+  echo "- An updater-script is in 'Edify' format"
+  echo
+  echo
+  echo "Enter a choice:"
+  echo 
+
+  echo "  1 = Convert updater-script to update-script (Amend)"
+  echo "  2 = Convert update-script to updater-script (Edify)"
+  echo "  0 = Exit"
+  echo
+  echo -n "? "
+
+  read enterNumber
+
+  if [ "$enterNumber" == "1" ]
+  then
+    scripts/convert_updater_script
+  elif [ "$enterNumber" == "2" ] 
+  then
+    scripts/convert_update_script
+  elif [ "$enterNumber" == "0" ]
+  then
+    exit 0
+  else 
+    echo "Invalid option"
+    continue
+  fi
+
+  scripts/press_enter
+  exit 0
+
+done

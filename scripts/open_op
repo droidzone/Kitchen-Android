@@ -1,0 +1,15 @@
+#!/bin/bash
+export orig_dir=`pwd`
+#echo $orig_dir
+cd $orig_dir/OUTPUT_ZIP
+if [ -e /usr/bin/dolphin ]
+then
+  dolphin .
+elif [ -e nautilus ]
+then 
+  nautilus .
+else
+  echo "No compatible file managers found!"
+fi
+cd $orig_dir
+scripts/press_enter

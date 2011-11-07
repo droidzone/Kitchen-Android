@@ -1,0 +1,101 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+
+bin_list=( clear gcc java perl sed wget od wc cpio )
+arg_list=( foo dumpversion version v -version V -version -version -version )
+
+show_header=1
+
+for (( i = 0 ; i < ${#bin_list[@]} ; i++ ))
+do
+  
+  if [ $show_header == 1 ]
+  then
+    clear
+    echo
+    echo
+    echo
+    echo
+    echo "Welcome to dsixda's Android Kitchen"
+    echo
+    echo -n "Please wait "
+    for (( count = 0 ; $count <= $i ; count++ ))
+    do
+      echo -n "."
+    done
+
+    show_header=0
+
+  else
+    echo -n "."
+  fi
+
+  found_error=0
+
+  bin=${bin_list[$i]}
+  argmt=${arg_list[$i]}
+
+  res=`$bin -$argmt 2>/dev/null`
+  result=$?
+
+  if [ "$result" == "127" ]
+  then
+    echo
+    echo
+    echo "Error:  The application '$bin' is not installed.  The kitchen"
+    echo "        will not function properly without it.  Refer to the"
+    echo "        FAQ for the Android Kitchen at xda-developers.com for"
+    echo "        assistance on installing the binary for '$bin'."
+    echo 
+
+    found_error=1
+
+  elif [ "$bin" == "sed" ]
+  then
+
+    grep_cmd=`sed --version | grep -m 1 GNU`
+
+    if [ "$grep_cmd" == "" ]
+    then
+      echo
+      echo
+      echo "Error:  You do not have the correct version of 'sed' installed."
+      echo "        Refer to the FAQ for the Android Kitchen at"
+      echo "        xda-developers.com to ensure you have installed the GNU"
+      echo "        version of sed."
+      echo
+
+      found_error=1
+
+    fi
+  fi
+
+  if [ $found_error == 1 ]
+  then
+    #echo -n "Ignore and proceed anyway (y/n)? (default: n): "
+    #read proceedCheck
+    proceedCheck=n
+
+    if [ "$proceedCheck" != "y" ] 
+    then
+      exit 1
+    else
+      show_header=1
+    fi
+  fi
+
+done
+
+
+exit 0
+
+
+

@@ -1,0 +1,205 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+
+img_dir=$1
+img_file=$2
+
+if [ "$img_dir" == "" ] || [ "$img_file" == "" ] 
+then
+  echo "Error:  extract_ext3_img is missing information."
+  echo "        Syntax: extract_ext3_img <file_directory> <img_file_name>"
+  echo
+  exit 1
+fi
+
+img_path=$img_dir/$img_file
+
+if [ ! -e $img_path ]
+then
+  echo "Error: $img_path not found!"
+  echo
+  exit 1
+fi
+
+base_dir=`pwd`
+
+if [ `uname | grep CYGWIN` ]
+then
+
+  dos_path=`cygpath -wp $img_dir`
+
+  while :
+  do
+
+    clear
+
+    echo 
+    echo "Unpack the $img_file"
+    echo "-----------------------"
+    echo 
+    echo "Enter a choice below to unpack your image file, assuming it"
+    echo "uses an EXT filesystem. You might find that one option works"
+    echo "better than the other."
+    echo
+    echo "e.g.  EXT3: Older devices such as HTC Desire HD"
+    echo "      EXT4: Newer devices such as HTC Desire S"
+    echo 
+    echo "  1 - Run Explore2fs  (Best choice for EXT3)"
+    echo "  2 - Run Ext2Explore (EXT3/EXT4)"
+    echo "  3 - I'm finished unpacking / Abort"
+    echo
+    echo
+    echo "NOTE: If any of the tools listed above have problems with"
+    echo "      extraction, then try the other option(s) listed."
+    echo
+    echo -n "Select number: "
+
+    read enterNumber
+
+    if [ "$enterNumber" == "1" ]
+    then
+      scripts/show_explore2fs $img_dir $img_file
+
+    elif [ "$enterNumber" == "2" ]
+    then
+      scripts/show_ext2explore $img_dir $img_file
+    
+    elif [ "$enterNumber" == "3" ]
+    then
+      break
+    
+    else
+      echo "Invalid option"
+    fi
+
+    if [ "$enterNumber" == "1" ] || [ "$enterNumber" == "2" ]
+    then
+      echo
+      echo "--> If you're satisfied with extraction, select option 3 in next menu"
+      echo
+
+      scripts/press_enter
+    fi
+
+  done
+
+
+  cd $img_dir
+  rm -f unyaffs*stackdump
+
+  cd $base_dir
+
+
+elif [ `uname | grep Linux` ]
+then
+
+  echo "Mounting $img_file to loopback device and then extracting files ..."
+  
+  cd $img_dir
+
+  user_=`whoami`
+  mkdir ../tmp
+
+  # For ext4 (To prevent hanging when unmounting, use: ro,noexec,noload)
+  sudo mount -o loop,ro,noexec,noload $img_file ../tmp 2>/dev/null  
+  res=$?
+
+  if [ "$res" != "0" ]
+  then
+    # For ext3
+    sudo mount -o loop $img_file ../tmp 2>/dev/null
+    res=$?
+  fi
+  
+  if [ "$res" == "0" ]
+  then
+    
+    if [ "$img_file" == "ext4_cache.img" ] || [ "$img_file" == "cache.rfs" ]
+    then
+      sudo cp ../tmp/recovery/sec_csc.zip .
+    else
+      sudo cp -R ../tmp/* .
+    fi
+
+    sudo umount ../tmp
+    rmdir ../tmp
+    sudo chown -R $user_ *
+  else
+    echo "Error: Unable to mount $img_file"
+  fi
+
+  rm -f unyaffs*stackdump
+
+  cd $base_dir
+
+elif [ `sw_vers | grep -o Mac` ]
+then
+  
+  #
+  # Mac support - with help from he8us
+  #
+
+  res=`which fuse-ext2 2>/dev/null`
+  result=$?
+
+  if [ "$result" == "0" ]
+  then
+
+    cd $img_dir
+
+    echo "Fuse installed"
+    mv $img_file ../$img_file
+    cd ..
+    mkdir /tmp/for_kitchen/
+
+    echo "Trying to mount the filesystem"
+    buffer=`fuse-ext2 $img_file /tmp/for_kitchen/`
+    echo "Filesystem mounted"
+    listing=`ls /tmp/for_kitchen/`
+    echo "File system listed, analyzing"
+    
+    if [ "$listing" != "" ]
+    then
+
+      echo "Copying files"
+
+      if [ "$img_file" == "ext4_cache.img" ]
+      then
+        cp /tmp/for_kitchen/recovery/sec_csc.zip .
+      else
+        cp -R /tmp/for_kitchen/ $img_dir/
+      fi
+
+      umount /tmp/for_kitchen/
+      rmdir /tmp/for_kitchen/
+      mv $img_file $img_dir/$img_file
+      cd system
+
+      rm -f unyaffs*stackdump
+
+      cd $base_dir
+
+    else
+      echo "Failed to mount the filesystem: mount point empty"
+      echo $listing
+      rmdir /tmp/for_kitchen/
+      cd $base_dir
+      exit 1
+    fi
+
+  else
+    echo "Your system does not have fuse installed."
+    echo "Please install it by searching Google for MacFuse and fuse-ext2."
+  fi
+fi
+
+
+

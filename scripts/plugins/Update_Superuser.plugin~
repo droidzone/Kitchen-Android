@@ -1,0 +1,51 @@
+#!/bin/bash
+echo
+echo "Update Superuser"
+echo "---------------"
+echo
+echo "This script will update Superuser,apk and binary in your Working dir"
+echo
+
+echo -n "Proceed (y/n)? (default: y): "
+read do_batch
+echo
+
+if [ "$do_batch" == "n" ]
+then
+  exit 0
+fi
+
+
+#scripts/update_su
+updated=0
+if [ -d tools/su_files/newsu ]
+then
+    if [ -e tools/su_files/newsu/su ]
+    then
+      echo "New Superuser binary found. Updating..."
+      cp -f tools/su_files/newsu/su WORKING_*/system/bin/su
+      updated=1
+    else
+      echo "Superuser binary not found!"
+    fi
+    if [ -e tools/su_files/newsu/Superuser.apk ]
+    then
+      echo "New Superuser apk found. Updating..."
+      cp -f tools/su_files/newsu/Superuser.apk WORKING_*/system/app/Superuser.apk
+      updated=1
+    else
+      echo "Superuser apk not found!"
+    fi
+else
+  echo "No Superuser update directory found. Aborting"
+fi
+
+if [ $updated -eq 1 ] then
+  echo 
+  echo "Superuser binary and/or apk was changed"
+  echo "Watch the next boot for any errors"
+else
+  echo "No Superuser updates found. Aborting"
+  echo "You can manually add updates to tools/su_files/newsu/"
+fi
+scripts/press_enter

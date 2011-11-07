@@ -1,0 +1,20 @@
+#!/bin/bash
+export orig_dir=`pwd`
+
+filed=$orig_dir/WORK*/changelog.txt
+
+if [ -e /usr/bin/kate ] 
+then
+  echo "Opening Kate text editor"  
+  kate $filed
+elif [ -e /usr/bin/gedit ] 
+then
+  echo "Opening Gedit text editor"    
+  gedit $filed
+else
+  echo "Did not find a suitable compatible editor. Aborting"
+fi
+
+echo "Hit a key to exit"
+read something_1
+exit 0

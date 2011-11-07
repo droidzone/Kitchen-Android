@@ -1,0 +1,92 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+ 
+temp=`ls WORKING_* 2>/dev/null`
+res=$?
+
+if [ "$res" == "2" ]
+then
+  echo "No working folder found!"
+  exit 0
+else
+  cd WORKING_*
+fi
+
+if [ ! -d META-INF/com/google/android ]
+then
+  echo "No META-INF/com/google/android folder found, creating it."
+  mkdir -p META-INF/com/google/android
+  echo
+fi
+
+cd META-INF/com/google/android
+
+
+if [ -e update-script ]
+then
+  echo "Found update-script"
+  cd ../../../../.. 
+
+else  
+
+  if [ -e updater-script ]
+  then
+
+    cd ../../../../..
+
+    echo
+    echo "======================================================="
+    echo
+    echo "Found an updater-script but not an update-script. For"
+    echo "compatibility with the kitchen scripts, only update-"
+    echo "scripts are used in the kitchen. (See the kitchen's FAQ"
+    echo "at xda-developers.com for a detailed explanation.)"
+    echo
+    echo "Choose an option number:"
+    echo 
+    echo "  1 = Convert it to update-script (recommended)"
+    echo "  2 = Do nothing, keep the updater-script"
+    echo
+    echo "- Option #1 will do a conversion of the updater-script"
+    echo "  (Edify) into an update-script (Amend). NOTE: It can"
+    echo "  be changed back to Edify format when ROM is built."
+    echo
+    echo "- Option #2 should only be used if you wish not to use"
+    echo "  any of the options in the kitchen other than to"
+    echo "  build the ROM or to convert to update-script later."
+    echo
+    echo -n "? (default=1) "
+
+    read enter_option
+    if [ "$enter_option" != "2" ]
+    then
+      scripts/convert_updater_script no_help
+      scripts/fix_update_script
+    else
+      echo
+      echo "WARNING: The kitchen may have problems without an update-script"
+      exit 1
+    fi
+
+  else
+
+    cd ../../../../..
+
+    echo "Did not find an update-script, creating one."
+    cd WORKING_*
+    cp ../tools/update_files/update-script META-INF/com/google/android/
+    cd ..
+    scripts/fix_update_script
+    scripts/fix_update_script_with_features
+
+  fi
+fi
+

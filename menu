@@ -1,0 +1,141 @@
+#!/bin/bash
+
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+# Additions by Droidzone
+# 
+############################################################################
+
+version=1.001
+
+
+if [ ! -e menu ]
+then
+  echo
+  echo "Ensure you run this file from the SAME folder as where it was"
+  echo "installed, otherwise the kitchen will have problems running the"
+  echo "scripts.  Start the kitchen with the ./menu command, NOT with"
+  echo "any other command or method!"
+  exit 0
+fi
+
+dir_list=( original_update scripts tools )
+error_found=0
+
+for check_dir in ${dir_list[@]}
+do
+  if [ ! -e $check_dir ]
+  then
+    echo "Error: Folder '$check_dir' not found"
+    error_found=1
+  fi
+done
+
+if [ $error_found == 1 ]
+then
+  echo
+  echo "Ensure you have installed the folders for the kitchen correctly."
+  exit 0
+fi
+
+
+chmod 755 scripts/*
+scripts/check_install_dir
+
+if [ "$?" == "1" ]
+then
+  exit 0
+fi
+
+scripts/init_kitchen
+scripts/check_binaries
+
+if [ "$?" == "1" ]
+then
+  exit 0
+fi
+
+
+while :
+do
+
+  clear
+
+  echo 
+  echo "============================================================"
+  echo " Dsixda's Android Kitchen $version - Droidzone"
+  echo "============================================================"
+  echo
+  echo "  1 - Set up working folder from ROM"
+  echo "  2 - Add root permissions"
+  echo "  3 - Add BusyBox"
+  echo "  4 - Disable boot screen sounds"
+  echo "  5 - Add wireless tethering"
+  echo "  6 - Zipalign all *.apk files to optimize RAM usage"
+  echo "  7 - Change wipe status of ROM"
+  echo "  8 - Change name of ROM "   
+  echo "8.1 - Change name of ROM (Beta version)"   
+  echo "8.2 - Edit Build.prop manually"  
+  echo "  9 - Check update-script for errors"
+  echo " 10 - Show working folder information"
+  echo " 11 - Open Working Folder (Dolphin/Nautilus)"
+  echo " 12 - Open Output Folder"
+  echo " 13 - Edit Updater-script (gedit)"
+  echo " 14 - Remove all output unsigned files"
+  echo 
+  echo "  0 - ADVANCED OPTIONS"
+  echo " 99 - Build ROM from working folder"
+  echo
+  echo "  u - Update/About kitchen"
+  echo "  c - Edit/Create Changelog.txt"
+  echo "  e - Edit Menu "
+  echo "  x - Exit"
+  echo
+  echo 
+  echo -n "Enter option: "
+  read opt
+
+  if [ "$opt" != "x" ] && [ "$opt" != "u" ] && [ "$opt" != "1" ]
+  then
+    scripts/check_multiple_working
+  fi
+  
+  if [ "$?" != "1" ]
+  then
+    case $opt in
+      1) clear; scripts/check_rom; continue;;
+      2) scripts/do_root; continue;;
+      3) scripts/add_busybox show_help;;
+      4) scripts/disable_sounds;;
+      5) scripts/add_tether;;
+      6) scripts/do_zipalign;;
+      7) scripts/change_wipe;;
+      8) scripts/change_rom_name;;
+      8.1) scripts/change_rom_name_beta;;
+      8.2) scripts/edit_build_prop; continue;;
+      9) scripts/verify_update_script; continue;;
+      10) scripts/show_rom_info;;
+      11) scripts/open_wf; continue;;
+      12) scripts/open_op; continue;;
+      13) scripts/edit_updater; continue;;
+      14) scripts/rem_unsigned; continue;;      
+      0) scripts/menu_advanced $version; continue;;
+      99) scripts/build_rom;;
+      u) scripts/about $version; continue;;
+      c) scripts/edit_changelog;;
+      e) scripts/edit_menu main;;
+      x) scripts/init_kitchen; clear; echo; echo "Goodbye."; echo; exit 1;;
+      *) echo "Invalid option"; continue;;
+    esac
+  fi
+
+  scripts/press_enter
+
+done
+

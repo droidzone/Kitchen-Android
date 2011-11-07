@@ -1,0 +1,80 @@
+############################################################################
+#
+# Copyright (c) 2010-2011 dsixda - dislam@rocketmail.com
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+
+cd WORKING_*
+cd META-INF/com/google/android
+update_dir=`pwd`
+
+if [ -e update-binary.orig ]
+then
+  echo
+  echo "Copying original update-binary"
+  cp -vf update-binary.orig update-binary
+
+elif [ -e update-binary ]
+then
+  echo
+  echo "Using existing update-binary"
+  echo
+
+else
+
+  cd ../../../../..
+  scripts/check_galaxy_s2
+  sgs2=$?
+  cd $update_dir
+
+  echo
+  echo "Copying update-binary ..."
+
+  if [ "$sgs2" == "1" ] 
+  then
+    
+    cp -vf ../../../../../tools/update_files/sgs2-update-binary update-binary
+
+  else
+
+    grep_emmc=`grep -c "mount(.*,.*,.*,.*)" updater-script`
+
+    if [ $grep_emmc -gt 0 ]
+    then
+
+      #
+      # Four args for mount
+      #
+      # e.g. mount("ext3", "EMMC", "/dev/block/mmcblk0p26", "/data");
+      # e.g. mount("yaffs2", "MTD", "userdata", "/data");
+      #
+
+      cp -vf ../../../../../tools/update_files/emmc-update-binary update-binary
+
+   else
+
+      #
+      # Three args for mount, but no MTD or assert
+      #
+      # mount("ext3", "/dev/block/mmcblk0p25", "/system");
+      #
+      # OR
+      #
+      # Three arguments, can use MTD and assert 
+      #
+      # e.g. mount("MTD", "userdata", "/data");
+      #
+
+      cp -vf ../../../../../tools/update_files/mtd-update-binary update-binary
+
+    fi
+  fi
+
+fi
+
+cd ../../../../..
