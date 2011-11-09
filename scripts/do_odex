@@ -1,0 +1,85 @@
+############################################################################
+#
+# By Droidzone
+#
+############################################################################
+
+
+
+  clear
+
+  echo
+  echo "----------------------------------------------------------------"
+  echo  
+  echo "Odexing (or de-odex'ing) will take the *.apk files and *.dex files"
+  echo "in your ROM and convert them into Optimized dexes (odexes). " 
+  echo "zipped into their *.apk or framework *.jar files."
+  echo ""
+  echo "The intent of odexing is to make the data partition smaller in size"
+  echo "Because of the wide variety of different partition layouts in"
+  echo "different Roms, it WILL not work on many Roms"
+  echo
+  echo "----------------------------------------------------------------"
+  echo "At the end of the process, the odexer will create a dir named"
+  echo "/sdcard/odexed/app and /sdcard/odexed/framework which contain"
+  echo "odexed files"
+  echo
+  echo "Your phone should be connected by USB and booted up for this to"
+  echo "work."
+  echo
+  odex_done=0
+  apps_odexed=0
+  fr_odexed=0
+  
+  echo "This is $PWD"
+  scripts/press_enter
+  echo "Copying Odex live scripts to your data folder"
+  adb push ./scripts/odex /data/
+  adb shell chmod 755 /data/odex/*.sh
+  echo
+  echo "Odexing now..."
+  adb shell /data/odex/clean_out.sh
+  echo "Odexing /system/app"
+  adb shell /data/odex/odex.sh
+  #echo "Odexing /system/framework"
+  #adb shell /data/odex/odexfr.sh
+  echo
+  adb pull /sdcard/apps.odexed
+  adb pull /sdcard/fr.odexed
+  if [ -e ./apps.odexed ]
+  then
+    apps_odexed=1
+    rm ./apps.odexed
+    odex_done=1
+  fi
+  
+  #if [ -e ./fr.odexed ]
+  #then
+  #  fr_odexed=1
+  #  rm ./fr.odexed
+  #  odex_done=1
+ # fi  
+  
+  if [ $odex_done -eq 0 ]
+  then
+    echo "Odexing completely failed. Your system has not been touched!"
+    scripts/press_enter
+    exit 1
+  fi
+  
+  if [ $apps_odexed -eq 0 ]
+  then
+    echo "Failed to odex /system/app. Your system has not been altered!"
+  fi
+  
+    if [ $fr_odexed -eq 0 ]
+  then
+    echo "Failed to odex /system/framework. Your system has not been altered!"
+  fi
+  adb pull /sdcard/odexed
+  if [ -d ./odexed ]
+  then
+    echo "Odexing procedure has completed. Check to see if everything is ok!"
+  fi
+ 
+  scripts/press_enter

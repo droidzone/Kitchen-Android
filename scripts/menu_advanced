@@ -22,6 +22,7 @@ do
   echo " Android Kitchen $version - by dsixda (xda-developers.com)"
   echo "============================================================"
   echo
+  echo " 10 - Odex files in your ROM (should be run from Recovery)"
   echo " 11 - Deodex files in your ROM"
   echo " 12 - Add task killer tweak for speed (stock ROM only)"
   echo " 13 - Add /data/app functionality"
@@ -52,6 +53,7 @@ do
   if [ "$?" != "1" ]
   then
     case $opt in
+      10) scripts/do_odex; continue;; 
       11) scripts/do_deodex; continue;; 
       12) scripts/task_killer;;
       13) scripts/add_data_app show_help;;
